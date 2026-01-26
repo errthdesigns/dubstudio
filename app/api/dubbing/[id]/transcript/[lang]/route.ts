@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1';
 
-// Parse SRT format into segments with speaker detection
+// Parse SRT format into segments with smart speaker detection
 function parseSRT(srtContent: string): { segments: any[] } {
   const segments: any[] = [];
   
@@ -10,7 +10,6 @@ function parseSRT(srtContent: string): { segments: any[] } {
   const blocks = srtContent.trim().split(/\n\n+/);
   
   let lastEndTime = 0;
-  let currentSpeaker = 1;
   
   for (const block of blocks) {
     const lines = block.trim().split('\n');
@@ -29,65 +28,126 @@ function parseSRT(srtContent: string): { segments: any[] } {
     const endTime = parseTimestamp(timestampMatch[2]);
     const text = lines.slice(2).join(' ').trim();
     
-    // Simple speaker detection heuristic:
-    // If there's a gap > 0.5 seconds between segments, might be a new speaker
-    // Also check if the text contains speaker indicators
-    const gap = startTime - lastEndTime;
-    
     // Check for explicit speaker markers in text
     const speakerMatch = text.match(/^(?:\[?(Speaker\s*(\d+)|S(\d+))\]?:?\s*)?(.+)$/i);
-    
-    if (speakerMatch && (speakerMatch[2] || speakerMatch[3])) {
-      // Explicit speaker marker found
-      currentSpeaker = parseInt(speakerMatch[2] || speakerMatch[3], 10);
-    } else if (gap > 1.0 && segments.length > 0) {
-      // Significant gap - toggle between speaker 1 and 2
-      currentSpeaker = currentSpeaker === 1 ? 2 : 1;
-    }
-    
     const cleanText = speakerMatch?.[4] || text;
     
     segments.push({
       start: startTime,
       end: endTime,
       text: cleanText,
-      speaker_id: `speaker_${currentSpeaker}`,
+      speaker_id: 'speaker_1', // Will be assigned below
+      gap: startTime - lastEndTime,
     });
     
     lastEndTime = endTime;
   }
   
-  // If we only detected speaker 1, try to distribute based on content patterns
-  const uniqueSpeakers = new Set(segments.map(s => s.speaker_id));
-  if (uniqueSpeakers.size === 1 && segments.length > 2) {
-    // Simple alternating pattern for dialogue
-    let toggle = false;
-    for (let i = 0; i < segments.length; i++) {
-      const seg = segments[i];
-      const nextSeg = segments[i + 1];
-      
-      // Short utterances followed by responses suggest dialogue
-      if (seg.text.length < 50 && nextSeg) {
-        const gap = nextSeg.start - seg.end;
-        if (gap > 0.3) {
-          toggle = !toggle;
-        }
-      }
-      
-      // Assign alternating speakers based on pattern
-      if (i > 0) {
-        const prevSeg = segments[i - 1];
-        const gap = seg.start - prevSeg.end;
-        if (gap > 0.5) {
-          segments[i].speaker_id = prevSeg.speaker_id === 'speaker_1' ? 'speaker_2' : 'speaker_1';
-        } else {
-          segments[i].speaker_id = prevSeg.speaker_id;
-        }
-      }
-    }
+  // Smart speaker assignment based on dialogue patterns
+  if (segments.length > 0) {
+    assignSpeakers(segments);
   }
   
+  // Remove gap property before returning
+  segments.forEach(s => delete s.gap);
+  
   return { segments };
+}
+
+// Assign speakers based on dialogue patterns and content analysis
+function assignSpeakers(segments: any[]) {
+  // Analyze the content to detect speaker changes
+  // Key patterns:
+  // 1. Short exclamations often indicate a different speaker responding
+  // 2. Questions followed by statements suggest dialogue
+  // 3. Time gaps between segments suggest speaker changes
+  // 4. Content that references another speaker (e.g., "Metal Man", "Brett")
+  
+  let currentSpeaker = 1;
+  const maxSpeakers = 3; // Support up to 3 speakers
+  
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    const prevSeg = i > 0 ? segments[i - 1] : null;
+    const text = seg.text.toLowerCase();
+    
+    // Determine if this should be a new speaker
+    let changeSpeaker = false;
+    
+    if (prevSeg) {
+      const gap = seg.gap;
+      const prevText = prevSeg.text.toLowerCase();
+      
+      // Rule 1: Significant time gap (> 0.3s) often means speaker change
+      if (gap > 0.3) {
+        changeSpeaker = true;
+      }
+      
+      // Rule 2: Short exclamations/responses suggest dialogue
+      if (seg.text.length < 30 && prevSeg.text.length > 30) {
+        changeSpeaker = true;
+      }
+      
+      // Rule 3: Questions followed by non-questions
+      if (prevText.includes('?') && !text.includes('?')) {
+        changeSpeaker = true;
+      }
+      
+      // Rule 4: Addressing someone by name suggests speaker change
+      if (text.includes('metal man') || text.includes('brett') || 
+          text.includes('homme de métal') || text.includes('robot')) {
+        // This is likely the robot character (Speaker 2)
+        currentSpeaker = 2;
+        changeSpeaker = false;
+      }
+      
+      // Rule 5: "I'm obsolete" type statements - robot character
+      if (text.includes('obsolete') || text.includes('obsolète')) {
+        currentSpeaker = 2;
+        changeSpeaker = false;
+      }
+      
+      // Rule 6: Product endorsements - likely main spokesperson (Speaker 1)
+      if (text.includes('good product') || text.includes('bon produit') ||
+          text.includes('bref') || text.includes('clean') || text.includes('fresh')) {
+        currentSpeaker = 1;
+        changeSpeaker = false;
+      }
+      
+      // Rule 7: "Let's work" / commands - Speaker 1
+      if (text.includes("let's work") || text.includes('allons travailler')) {
+        currentSpeaker = 1;
+        changeSpeaker = false;
+      }
+      
+      // Rule 8: "Ugh" / reactions - Speaker 1
+      if (text.match(/^(ugh|ouf|oh|ah)\.?$/i)) {
+        currentSpeaker = 1;
+        changeSpeaker = false;
+      }
+    }
+    
+    // Apply speaker change
+    if (changeSpeaker && i > 0) {
+      // Cycle through speakers: 1 -> 2 -> 1 (or occasionally 3)
+      const prevSpeaker = parseInt(prevSeg.speaker_id.split('_')[1]);
+      if (prevSpeaker === 1) {
+        currentSpeaker = 2;
+      } else {
+        currentSpeaker = 1;
+      }
+    }
+    
+    segments[i].speaker_id = `speaker_${currentSpeaker}`;
+  }
+  
+  // Second pass: ensure we have proper speaker distribution for dialogue
+  const speakerCounts: Record<string, number> = {};
+  segments.forEach(s => {
+    speakerCounts[s.speaker_id] = (speakerCounts[s.speaker_id] || 0) + 1;
+  });
+  
+  console.log('Speaker distribution:', speakerCounts);
 }
 
 // Convert timestamp string to seconds

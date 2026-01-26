@@ -231,14 +231,16 @@ export default function StudioPage() {
       console.log('Has original (Whisper) segments:', hasOriginal);
       console.log('Has translated (ElevenLabs) segments:', hasTranslated);
 
-      // Use the transcript with segments as primary
-      const primaryTranscript = hasOriginal ? originalTranscript : translatedTranscript;
-      const secondaryTranscript = hasOriginal ? translatedTranscript : originalTranscript;
-      const primaryIsOriginal = hasOriginal;
+      // Prefer translated transcript for speaker detection (ElevenLabs has better detection)
+      // But use original transcript for original text
+      const primaryTranscript = hasTranslated ? translatedTranscript : originalTranscript;
+      const secondaryTranscript = hasTranslated ? originalTranscript : translatedTranscript;
+      const primaryIsTranslated = hasTranslated;
 
       // Process transcript segments
       if (primaryTranscript.segments && primaryTranscript.segments.length > 0) {
         primaryTranscript.segments.forEach((seg: any, index: number) => {
+          // Use speaker_id from primary transcript (ElevenLabs has better detection)
           const speakerId = seg.speaker_id || seg.speaker || `speaker_${(index % 2) + 1}`;
           
           if (!speakerMap.has(speakerId)) {
@@ -262,12 +264,20 @@ export default function StudioPage() {
             speakerId,
             startTime: seg.start || seg.start_time || index * 3,
             endTime: seg.end || seg.end_time || (index + 1) * 3,
-            originalText: primaryIsOriginal ? (seg.text || '') : (secondarySeg?.text || ''),
-            translatedText: primaryIsOriginal ? (secondarySeg?.text || seg.text || '') : (seg.text || ''),
+            // If primary is translated, use secondary (original) for originalText
+            originalText: primaryIsTranslated ? (secondarySeg?.text || '') : (seg.text || ''),
+            translatedText: primaryIsTranslated ? (seg.text || '') : (secondarySeg?.text || seg.text || ''),
           });
         });
         
         console.log('Processed segments:', processedSegments.length);
+        
+        // Log speaker distribution
+        const speakerCounts: Record<string, number> = {};
+        processedSegments.forEach(s => {
+          speakerCounts[s.speakerId] = (speakerCounts[s.speakerId] || 0) + 1;
+        });
+        console.log('Speaker distribution in UI:', speakerCounts);
       }
 
       // If still no segments, the transcription might not be ready yet
