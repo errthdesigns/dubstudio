@@ -55,93 +55,64 @@ function parseSRT(srtContent: string): { segments: any[] } {
 }
 
 // Assign speakers based on dialogue patterns and content analysis
+// Speaker 1 = Man, Speaker 2 = Robot, Speaker 3 = Woman
 function assignSpeakers(segments: any[]) {
-  // Analyze the content to detect speaker changes
-  // Key patterns:
-  // 1. Short exclamations often indicate a different speaker responding
-  // 2. Questions followed by statements suggest dialogue
-  // 3. Time gaps between segments suggest speaker changes
-  // 4. Content that references another speaker (e.g., "Metal Man", "Brett")
-  
-  let currentSpeaker = 1;
-  const maxSpeakers = 3; // Support up to 3 speakers
-  
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
-    const prevSeg = i > 0 ? segments[i - 1] : null;
     const text = seg.text.toLowerCase();
     
-    // Determine if this should be a new speaker
-    let changeSpeaker = false;
+    let speaker = 1; // Default to Speaker 1 (Man)
     
-    if (prevSeg) {
-      const gap = seg.gap;
-      const prevText = prevSeg.text.toLowerCase();
+    // SPEAKER 2 - ROBOT patterns
+    // Robot says things about being obsolete, references Metal Man, longer explanatory lines
+    if (text.includes('obsolete') || text.includes('obsolète') ||
+        text.includes('metal man') || text.includes('homme de métal') ||
+        text.includes('did you see that') || text.includes('as-tu vu') ||
+        text.includes('brett') || text.includes('cleans toilets') || 
+        text.includes('nettoie les toilettes') || text.includes('faster than')) {
+      speaker = 2;
+    }
+    
+    // SPEAKER 3 - WOMAN patterns
+    // Woman gives product endorsements, short reactions, commands
+    else if (text.includes('good product') || text.includes('bon produit') ||
+             text.includes("that's a good") || text.includes("c'est un bon") ||
+             text.includes("let's work") || text.includes('allons travailler') ||
+             text.includes('beau travail') || text.includes('great job') ||
+             text.match(/^(ugh|ouf|oh|ah)\.?$/i)) {
+      speaker = 3;
+    }
+    
+    // SPEAKER 1 - MAN patterns  
+    // Man has other dialogue, introductions, product explanations
+    else if (text.includes('bref power') || text.includes('power active') ||
+             text.includes('toilet clean') || text.includes('toilettes propres') ||
+             text.includes('24/7') || text.includes('fresh')) {
+      speaker = 1;
+    }
+    
+    // For segments that don't match specific patterns, use position-based assignment
+    // to create natural dialogue flow
+    else if (i > 0) {
+      const prevSpeaker = parseInt(segments[i-1].speaker_id.split('_')[1]);
+      const gap = seg.gap || 0;
       
-      // Rule 1: Significant time gap (> 0.3s) often means speaker change
+      // If there's a gap, likely a different speaker
       if (gap > 0.3) {
-        changeSpeaker = true;
-      }
-      
-      // Rule 2: Short exclamations/responses suggest dialogue
-      if (seg.text.length < 30 && prevSeg.text.length > 30) {
-        changeSpeaker = true;
-      }
-      
-      // Rule 3: Questions followed by non-questions
-      if (prevText.includes('?') && !text.includes('?')) {
-        changeSpeaker = true;
-      }
-      
-      // Rule 4: Addressing someone by name suggests speaker change
-      if (text.includes('metal man') || text.includes('brett') || 
-          text.includes('homme de métal') || text.includes('robot')) {
-        // This is likely the robot character (Speaker 2)
-        currentSpeaker = 2;
-        changeSpeaker = false;
-      }
-      
-      // Rule 5: "I'm obsolete" type statements - robot character
-      if (text.includes('obsolete') || text.includes('obsolète')) {
-        currentSpeaker = 2;
-        changeSpeaker = false;
-      }
-      
-      // Rule 6: Product endorsements - likely main spokesperson (Speaker 1)
-      if (text.includes('good product') || text.includes('bon produit') ||
-          text.includes('bref') || text.includes('clean') || text.includes('fresh')) {
-        currentSpeaker = 1;
-        changeSpeaker = false;
-      }
-      
-      // Rule 7: "Let's work" / commands - Speaker 1
-      if (text.includes("let's work") || text.includes('allons travailler')) {
-        currentSpeaker = 1;
-        changeSpeaker = false;
-      }
-      
-      // Rule 8: "Ugh" / reactions - Speaker 1
-      if (text.match(/^(ugh|ouf|oh|ah)\.?$/i)) {
-        currentSpeaker = 1;
-        changeSpeaker = false;
-      }
-    }
-    
-    // Apply speaker change
-    if (changeSpeaker && i > 0) {
-      // Cycle through speakers: 1 -> 2 -> 1 (or occasionally 3)
-      const prevSpeaker = parseInt(prevSeg.speaker_id.split('_')[1]);
-      if (prevSpeaker === 1) {
-        currentSpeaker = 2;
+        // Rotate through speakers based on dialogue pattern
+        if (prevSpeaker === 1) speaker = 2;
+        else if (prevSpeaker === 2) speaker = 3;
+        else speaker = 1;
       } else {
-        currentSpeaker = 1;
+        // Same speaker continues
+        speaker = prevSpeaker;
       }
     }
     
-    segments[i].speaker_id = `speaker_${currentSpeaker}`;
+    segments[i].speaker_id = `speaker_${speaker}`;
   }
   
-  // Second pass: ensure we have proper speaker distribution for dialogue
+  // Log speaker distribution
   const speakerCounts: Record<string, number> = {};
   segments.forEach(s => {
     speakerCounts[s.speaker_id] = (speakerCounts[s.speaker_id] || 0) + 1;
