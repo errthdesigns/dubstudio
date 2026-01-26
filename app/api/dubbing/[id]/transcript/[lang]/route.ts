@@ -55,7 +55,7 @@ function parseSRT(srtContent: string): { segments: any[] } {
 }
 
 // Assign speakers based on dialogue patterns and content analysis
-// Speaker 1 = Man, Speaker 2 = Robot, Speaker 3 = Woman
+// Speaker 1 = Man, Speaker 2 = Robot, Speaker 3 = Woman (only says "It's an ad")
 function assignSpeakers(segments: any[]) {
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
@@ -63,50 +63,27 @@ function assignSpeakers(segments: any[]) {
     
     let speaker = 1; // Default to Speaker 1 (Man)
     
-    // SPEAKER 2 - ROBOT patterns
-    // Robot says things about being obsolete, references Metal Man, longer explanatory lines
-    if (text.includes('obsolete') || text.includes('obsolète') ||
-        text.includes('metal man') || text.includes('homme de métal') ||
-        text.includes('did you see that') || text.includes('as-tu vu') ||
-        text.includes('brett') || text.includes('cleans toilets') || 
-        text.includes('nettoie les toilettes') || text.includes('faster than')) {
-      speaker = 2;
-    }
-    
-    // SPEAKER 3 - WOMAN patterns
-    // Woman gives product endorsements, short reactions, commands
-    else if (text.includes('good product') || text.includes('bon produit') ||
-             text.includes("that's a good") || text.includes("c'est un bon") ||
-             text.includes("let's work") || text.includes('allons travailler') ||
-             text.includes('beau travail') || text.includes('great job') ||
-             text.match(/^(ugh|ouf|oh|ah)\.?$/i)) {
+    // SPEAKER 3 - WOMAN (only says "It's an ad" / "C'est une pub")
+    if (text.includes("it's an ad") || text.includes("its an ad") || 
+        text.includes("c'est une pub") || text.includes('cest une pub')) {
       speaker = 3;
     }
     
-    // SPEAKER 1 - MAN patterns  
-    // Man has other dialogue, introductions, product explanations
-    else if (text.includes('bref power') || text.includes('power active') ||
-             text.includes('toilet clean') || text.includes('toilettes propres') ||
-             text.includes('24/7') || text.includes('fresh')) {
-      speaker = 1;
+    // SPEAKER 2 - ROBOT patterns
+    // Robot says things about being obsolete, references Metal Man, talks to Brett
+    else if (text.includes('obsolete') || text.includes('obsolète') ||
+             text.includes('metal man') || text.includes('homme de métal') ||
+             text.includes('did you see that') || text.includes('as-tu vu') ||
+             text.includes('brett') || text.includes('cleans toilets') || 
+             text.includes('nettoie les toilettes') || text.includes('faster than') ||
+             text.includes('plus vite que')) {
+      speaker = 2;
     }
     
-    // For segments that don't match specific patterns, use position-based assignment
-    // to create natural dialogue flow
-    else if (i > 0) {
-      const prevSpeaker = parseInt(segments[i-1].speaker_id.split('_')[1]);
-      const gap = seg.gap || 0;
-      
-      // If there's a gap, likely a different speaker
-      if (gap > 0.3) {
-        // Rotate through speakers based on dialogue pattern
-        if (prevSpeaker === 1) speaker = 2;
-        else if (prevSpeaker === 2) speaker = 3;
-        else speaker = 1;
-      } else {
-        // Same speaker continues
-        speaker = prevSpeaker;
-      }
+    // SPEAKER 1 - MAN (main spokesperson, product explanations, reactions)
+    // Everything else is the Man
+    else {
+      speaker = 1;
     }
     
     segments[i].speaker_id = `speaker_${speaker}`;
