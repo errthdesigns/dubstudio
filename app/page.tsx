@@ -1,63 +1,183 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import VideoUpload from '@/components/VideoUpload';
+import LanguageSelector from '@/components/LanguageSelector';
 
 export default function Home() {
+  const router = useRouter();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [targetLanguage, setTargetLanguage] = useState('fr');
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const handleSubmit = async () => {
+    if (!selectedFile) {
+      setError('Please select a video file');
+      return;
+    }
+
+    setIsUploading(true);
+    setError(null);
+    setUploadProgress(10);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('target_lang', targetLanguage);
+      formData.append('source_lang', 'auto');
+
+      setUploadProgress(30);
+
+      const response = await fetch('/api/dubbing', {
+        method: 'POST',
+        body: formData,
+      });
+
+      setUploadProgress(70);
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to create dubbing project');
+      }
+
+      const data = await response.json();
+      setUploadProgress(100);
+
+      // Store the video file URL for the studio page
+      const videoUrl = URL.createObjectURL(selectedFile);
+      sessionStorage.setItem('uploadedVideoUrl', videoUrl);
+      sessionStorage.setItem('uploadedFileName', selectedFile.name);
+      sessionStorage.setItem('targetLanguage', targetLanguage);
+      
+      // Store original transcript from Whisper (for Vercel deployment)
+      if (data.originalTranscript) {
+        sessionStorage.setItem('originalTranscript', JSON.stringify(data.originalTranscript));
+      }
+
+      // Navigate to studio page
+      router.push(`/studio/${data.dubbing_id}`);
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Header */}
+      <header className="border-b border-[#2a2a2a]">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-bold text-white tracking-tight">DubStudio</h1>
+          </div>
+          <div className="hidden sm:flex items-center gap-2 text-sm text-gray-400">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            AI-Powered
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-3xl mx-auto px-6 py-12">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-sm mb-6">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+            </svg>
+            Instant AI Dubbing
+          </div>
+          <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">
+            Transform your videos into<br />
+            <span className="text-emerald-400">any language</span>
+          </h2>
+          <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">
+            Upload your video and let AI handle the transcription, translation, and voice synthesis. 
+            Perfect dubbing in seconds, not hours.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        <div className="space-y-8">
+          {/* Step 1: Upload */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">
+                1
+              </div>
+              <h3 className="text-lg font-medium text-white">Upload your video</h3>
+            </div>
+            <VideoUpload
+              onFileSelect={setSelectedFile}
+              disabled={isUploading}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          </div>
+
+          {/* Step 2: Select Language */}
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">
+                2
+              </div>
+              <h3 className="text-lg font-medium text-white">Select target language</h3>
+            </div>
+            <LanguageSelector
+              value={targetLanguage}
+              onChange={setTargetLanguage}
+              disabled={isUploading}
+            />
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Progress Bar */}
+          {isUploading && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-400">Processing video...</span>
+                <span className="text-emerald-400">{uploadProgress}%</span>
+              </div>
+              <div className="h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedFile || isUploading}
+            className={`
+              w-full py-4 rounded-lg font-medium text-lg transition-all
+              ${selectedFile && !isUploading
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer'
+                : 'bg-[#1a1a1a] text-gray-500 cursor-not-allowed'
+              }
+            `}
           >
-            Documentation
-          </a>
+            {isUploading ? 'Processing...' : 'Start Dubbing'}
+          </button>
+
+          {/* Info */}
+          <p className="text-center text-sm text-gray-500">
+            Supported formats: MP4, MOV, WebM • Max file size: 500MB
+          </p>
         </div>
       </main>
     </div>
