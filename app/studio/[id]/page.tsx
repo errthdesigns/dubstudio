@@ -117,11 +117,17 @@ export default function StudioPage() {
           console.log('Source language:', data.source_language);
           console.log('Target languages:', data.target_languages);
           
+          // Store source language for speaker detection
+          if (data.source_language) {
+            sessionStorage.setItem('sourceLanguage', data.source_language);
+          }
+          
           // Use the actual target language from ElevenLabs response if available
           const actualTargetLang = data.target_languages?.[0] || targetLanguage;
           if (actualTargetLang !== targetLanguage) {
             console.log(`Using actual target language: ${actualTargetLang} instead of ${targetLanguage}`);
             setTargetLanguage(actualTargetLang);
+            sessionStorage.setItem('targetLanguage', actualTargetLang);
           }
           
           // Fetch transcripts and dubbed audio (voices are fetched inside fetchTranscripts)
@@ -354,9 +360,13 @@ export default function StudioPage() {
       }
 
       // Fetch translated transcript
-      // Use the target language from sessionStorage (may have been updated from ElevenLabs)
       const lang = sessionStorage.getItem('targetLanguage') || targetLanguage;
       let translatedTranscript: any = { segments: [] };
+      
+      // Also try to get source language transcript (might have speaker markers)
+      let sourceLangTranscript: any = { segments: [] };
+      const sourceLang = sessionStorage.getItem('sourceLanguage');
+      
       try {
         console.log(`Fetching translated transcript for language: ${lang}`);
         const translatedResponse = await fetch(`/api/dubbing/${dubbingId}/transcript/${lang}`);
@@ -364,15 +374,59 @@ export default function StudioPage() {
           translatedTranscript = await translatedResponse.json();
           console.log(`Translated (${lang}) transcript segments:`, translatedTranscript.segments?.length);
           
-          // Log first segment to verify it's actually translated
           if (translatedTranscript.segments?.length > 0) {
             console.log(`First translated segment: "${translatedTranscript.segments[0].text}"`);
+            // Check speaker distribution
+            const speakerDist: Record<string, number> = {};
+            translatedTranscript.segments.forEach((s: any) => {
+              speakerDist[s.speaker_id || 'unknown'] = (speakerDist[s.speaker_id || 'unknown'] || 0) + 1;
+            });
+            console.log('Translated transcript speaker distribution:', speakerDist);
           }
         } else {
           console.log(`Translated transcript not available: ${translatedResponse.status}`);
         }
       } catch (e) {
         console.log(`Could not fetch ${lang} transcript:`, e);
+      }
+      
+      // Try source language for better speaker detection
+      if (sourceLang && sourceLang !== lang) {
+        try {
+          console.log(`Fetching source language transcript: ${sourceLang}`);
+          const sourceResponse = await fetch(`/api/dubbing/${dubbingId}/transcript/${sourceLang}`);
+          if (sourceResponse.ok) {
+            sourceLangTranscript = await sourceResponse.json();
+            console.log(`Source (${sourceLang}) transcript segments:`, sourceLangTranscript.segments?.length);
+            
+            // Check if source has better speaker distribution
+            const speakerDist: Record<string, number> = {};
+            sourceLangTranscript.segments?.forEach((s: any) => {
+              speakerDist[s.speaker_id || 'unknown'] = (speakerDist[s.speaker_id || 'unknown'] || 0) + 1;
+            });
+            console.log('Source transcript speaker distribution:', speakerDist);
+            
+            // If source has multiple speakers and translated doesn't, use source speakers
+            const sourceHasMultiple = Object.keys(speakerDist).length > 1;
+            const translatedDist: Record<string, number> = {};
+            translatedTranscript.segments?.forEach((s: any) => {
+              translatedDist[s.speaker_id || 'unknown'] = (translatedDist[s.speaker_id || 'unknown'] || 0) + 1;
+            });
+            const translatedHasMultiple = Object.keys(translatedDist).length > 1;
+            
+            if (sourceHasMultiple && !translatedHasMultiple) {
+              console.log('Using speaker assignments from source language transcript');
+              // Map source speakers to translated segments by index
+              translatedTranscript.segments?.forEach((seg: any, i: number) => {
+                if (sourceLangTranscript.segments?.[i]) {
+                  seg.speaker_id = sourceLangTranscript.segments[i].speaker_id;
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.log(`Could not fetch source language transcript:`, e);
+        }
       }
 
       // Process speakers and segments
