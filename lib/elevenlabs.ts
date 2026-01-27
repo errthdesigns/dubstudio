@@ -130,6 +130,8 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'es', name: 'Spanish' },
   { code: 'it', name: 'Italian' },
   { code: 'pl', name: 'Polish' },
+  { code: 'de', name: 'German' },
+  { code: 'hu', name: 'Hungarian' },
 ] as const;
 
 export type LanguageCode = typeof SUPPORTED_LANGUAGES[number]['code'];

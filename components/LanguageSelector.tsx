@@ -8,6 +8,8 @@ const LANGUAGES = [
   { code: 'es', name: 'Spanish', flag: '🇪🇸' },
   { code: 'it', name: 'Italian', flag: '🇮🇹' },
   { code: 'pl', name: 'Polish', flag: '🇵🇱' },
+  { code: 'de', name: 'German', flag: '🇩🇪' },
+  { code: 'hu', name: 'Hungarian', flag: '🇭🇺' },
 ];
 
 interface LanguageSelectorProps {

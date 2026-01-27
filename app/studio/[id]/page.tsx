@@ -52,6 +52,8 @@ const LANGUAGE_NAMES: Record<string, string> = {
   es: 'Spanish',
   it: 'Italian',
   pl: 'Polish',
+  de: 'German',
+  hu: 'Hungarian',
 };
 
 export default function StudioPage() {
