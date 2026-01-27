@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1';
 
-// Custom Henkel voice IDs - these will be prioritized at the top
-const HENKEL_VOICE_IDS = [
-  'RQvNZqghdI6DJZQGlS6z', // Henkle Man - French
-  'UetQvP6QBCAbMCtDOdNn', // Henkle Woman - French
-  'ECcbt2NBz2UzKu3M0WwL', // Henkle Robot - French
+// Custom Schwarzkopf voice IDs - these will be prioritized at the top
+const SCHWARZKOPF_VOICE_IDS = [
+  'JEGuEzxdVSJfcKVC9VhI', // Schwarzkopf_French_Female_001
+  'ezC8NPawAxEHu3ty798X', // Schwarzkopf_German_Female_001
+  'LHQay3a5QezKwLIVSfKz', // Schwarzkopf_Spanish_Female_001
 ];
 
 // Get all available voices from ElevenLabs
@@ -42,17 +42,17 @@ export async function GET(request: NextRequest) {
       description: voice.description,
       labels: voice.labels,
       preview_url: voice.preview_url,
-      isHenkelVoice: HENKEL_VOICE_IDS.includes(voice.voice_id),
+      isSchwarzkopfVoice: SCHWARZKOPF_VOICE_IDS.includes(voice.voice_id),
     })) || [];
 
-    // Sort voices: Henkel voices first, then others
+    // Sort voices: Schwarzkopf voices first, then others
     const sortedVoices = voices.sort((a: any, b: any) => {
-      if (a.isHenkelVoice && !b.isHenkelVoice) return -1;
-      if (!a.isHenkelVoice && b.isHenkelVoice) return 1;
+      if (a.isSchwarzkopfVoice && !b.isSchwarzkopfVoice) return -1;
+      if (!a.isSchwarzkopfVoice && b.isSchwarzkopfVoice) return 1;
       return 0;
     });
 
-    console.log('Henkel voices found:', sortedVoices.filter((v: any) => v.isHenkelVoice).length);
+    console.log('Schwarzkopf voices found:', sortedVoices.filter((v: any) => v.isSchwarzkopfVoice).length);
 
     return NextResponse.json({ voices: sortedVoices });
   } catch (error) {
