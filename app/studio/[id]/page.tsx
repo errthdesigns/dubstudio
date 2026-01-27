@@ -228,19 +228,22 @@ export default function StudioPage() {
       const hasOriginal = originalTranscript.segments && originalTranscript.segments.length > 0;
       const hasTranslated = translatedTranscript.segments && translatedTranscript.segments.length > 0;
       
-      console.log('Has original (Whisper) segments:', hasOriginal);
-      console.log('Has translated (ElevenLabs) segments:', hasTranslated);
+      console.log('Has original (Whisper) segments:', hasOriginal, originalTranscript.segments?.length);
+      console.log('Has translated (ElevenLabs) segments:', hasTranslated, translatedTranscript.segments?.length);
+      console.log('Original language detected:', originalTranscript.language);
 
-      // Prefer translated transcript for speaker detection (ElevenLabs has better detection)
-      // But use original transcript for original text
-      const primaryTranscript = hasTranslated ? translatedTranscript : originalTranscript;
-      const secondaryTranscript = hasTranslated ? originalTranscript : translatedTranscript;
-      const primaryIsTranslated = hasTranslated;
+      // Build segments combining both transcripts
+      // Use the longer transcript as the base for timing
+      const baseTranscript = (translatedTranscript.segments?.length || 0) >= (originalTranscript.segments?.length || 0) 
+        ? translatedTranscript 
+        : originalTranscript;
+      const isBaseTranslated = baseTranscript === translatedTranscript;
+
+      console.log('Using base transcript:', isBaseTranslated ? 'translated' : 'original');
 
       // Process transcript segments
-      if (primaryTranscript.segments && primaryTranscript.segments.length > 0) {
-        primaryTranscript.segments.forEach((seg: any, index: number) => {
-          // Use speaker_id from primary transcript (ElevenLabs has better detection)
+      if (baseTranscript.segments && baseTranscript.segments.length > 0) {
+        baseTranscript.segments.forEach((seg: any, index: number) => {
           const speakerId = seg.speaker_id || seg.speaker || `speaker_${(index % 2) + 1}`;
           
           if (!speakerMap.has(speakerId)) {
@@ -250,13 +253,38 @@ export default function StudioPage() {
             });
           }
 
-          // Find matching segment in secondary transcript by time proximity
-          let secondarySeg = secondaryTranscript.segments?.[index];
-          if (!secondarySeg && secondaryTranscript.segments?.length > 0) {
-            // Try to find by closest start time
-            secondarySeg = secondaryTranscript.segments.find((s: any) => 
-              Math.abs((s.start || 0) - (seg.start || 0)) < 1
+          // Find matching segment in the other transcript by index or time
+          const otherTranscript = isBaseTranslated ? originalTranscript : translatedTranscript;
+          let matchingSeg = otherTranscript.segments?.[index];
+          
+          // Try to find by closest start time if index doesn't match
+          if (!matchingSeg && otherTranscript.segments?.length > 0) {
+            matchingSeg = otherTranscript.segments.find((s: any) => 
+              Math.abs((s.start || 0) - (seg.start || 0)) < 2
             );
+          }
+          
+          // Determine which text goes where
+          let origText = '';
+          let transText = '';
+          
+          if (isBaseTranslated) {
+            // Base is translated (ElevenLabs), so seg.text is the translation
+            transText = seg.text || '';
+            origText = matchingSeg?.text || '';
+          } else {
+            // Base is original (Whisper), so seg.text is the original
+            origText = seg.text || '';
+            transText = matchingSeg?.text || '';
+          }
+          
+          // If we only have one transcript, show it in both columns
+          // This handles the case where translation isn't ready yet
+          if (!origText && transText) {
+            origText = transText; // Show translated in both until original loads
+          }
+          if (!transText && origText) {
+            transText = origText; // Show original in both until translation loads
           }
           
           processedSegments.push({
@@ -264,13 +292,18 @@ export default function StudioPage() {
             speakerId,
             startTime: seg.start || seg.start_time || index * 3,
             endTime: seg.end || seg.end_time || (index + 1) * 3,
-            // If primary is translated, use secondary (original) for originalText
-            originalText: primaryIsTranslated ? (secondarySeg?.text || '') : (seg.text || ''),
-            translatedText: primaryIsTranslated ? (seg.text || '') : (secondarySeg?.text || seg.text || ''),
+            originalText: origText,
+            translatedText: transText,
           });
         });
         
         console.log('Processed segments:', processedSegments.length);
+        
+        // Log what we're showing
+        if (processedSegments.length > 0) {
+          console.log('Sample segment - Original:', processedSegments[0].originalText?.substring(0, 50));
+          console.log('Sample segment - Translated:', processedSegments[0].translatedText?.substring(0, 50));
+        }
         
         // Log speaker distribution
         const speakerCounts: Record<string, number> = {};

@@ -147,10 +147,16 @@ export async function GET(
     // Get the SRT content as text
     const srtContent = await response.text();
     console.log('SRT content length:', srtContent.length);
+    console.log('SRT content preview:', srtContent.substring(0, 500));
     
     // Parse the SRT format into segments with speaker detection
     const parsed = parseSRT(srtContent);
-    console.log(`Parsed ${parsed.segments.length} segments`);
+    console.log(`Parsed ${parsed.segments.length} segments for language: ${lang}`);
+    
+    // Log first segment to verify content
+    if (parsed.segments.length > 0) {
+      console.log(`First segment text (${lang}):`, parsed.segments[0].text);
+    }
     
     // Log speaker distribution
     const speakers = new Set(parsed.segments.map(s => s.speaker_id));
