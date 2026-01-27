@@ -72,9 +72,9 @@ export default function VideoUpload({ onFileSelect, disabled }: VideoUploadProps
     <div
       className={`
         drop-zone relative rounded-xl border-2 border-dashed transition-all cursor-pointer
-        ${isDragging ? 'border-emerald-500 bg-emerald-500/10' : 'border-[#2a2a2a] hover:border-[#3a3a3a]'}
+        ${isDragging ? 'border-emerald-500 bg-emerald-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'}
         ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-        ${preview ? 'border-solid border-[#2a2a2a]' : ''}
+        ${preview ? 'border-solid border-gray-200 bg-white' : ''}
       `}
       onDragEnter={handleDragIn}
       onDragLeave={handleDragOut}
@@ -95,7 +95,7 @@ export default function VideoUpload({ onFileSelect, disabled }: VideoUploadProps
         <div className="relative aspect-video rounded-lg overflow-hidden">
           <video
             src={preview}
-            className="w-full h-full object-contain bg-black"
+            className="w-full h-full object-contain bg-gray-900"
             muted
           />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -107,9 +107,9 @@ export default function VideoUpload({ onFileSelect, disabled }: VideoUploadProps
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-16 px-8">
-          <div className="w-16 h-16 rounded-full bg-[#1a1a1a] flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
             <svg
-              className="w-8 h-8 text-gray-400"
+              className="w-8 h-8 text-emerald-600"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -122,13 +122,13 @@ export default function VideoUpload({ onFileSelect, disabled }: VideoUploadProps
               />
             </svg>
           </div>
-          <p className="text-lg font-medium text-white mb-2">
+          <p className="text-lg font-medium text-gray-900 mb-2">
             Drop your video here
           </p>
-          <p className="text-sm text-gray-400 mb-4">
+          <p className="text-sm text-gray-500 mb-4">
             or click to browse
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-400">
             Supports MP4, MOV, WebM
           </p>
         </div>

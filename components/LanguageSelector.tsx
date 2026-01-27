@@ -29,7 +29,7 @@ export default function LanguageSelector({
   return (
     <div className="relative">
       {label && (
-        <label className="block text-sm font-medium text-gray-400 mb-2">
+        <label className="block text-sm font-medium text-gray-600 mb-2">
           {label}
         </label>
       )}
@@ -39,14 +39,14 @@ export default function LanguageSelector({
         disabled={disabled}
         className={`
           w-full flex items-center justify-between px-4 py-3 rounded-lg
-          bg-[#141414] border border-[#2a2a2a] text-left
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-[#3a3a3a] cursor-pointer'}
+          bg-white border border-gray-200 text-left shadow-sm
+          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-gray-300 cursor-pointer'}
           transition-colors
         `}
       >
         <span className="flex items-center gap-3">
           <span className="text-xl">{selectedLanguage?.flag}</span>
-          <span className="text-white">{selectedLanguage?.name || 'Select language'}</span>
+          <span className="text-gray-900">{selectedLanguage?.name || 'Select language'}</span>
         </span>
         <svg
           className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
@@ -64,7 +64,7 @@ export default function LanguageSelector({
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute top-full left-0 right-0 mt-2 z-20 bg-[#141414] border border-[#2a2a2a] rounded-lg shadow-xl overflow-hidden">
+          <div className="absolute top-full left-0 right-0 mt-2 z-20 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
             {LANGUAGES.map((language) => (
               <button
                 key={language.code}
@@ -75,8 +75,8 @@ export default function LanguageSelector({
                 }}
                 className={`
                   w-full flex items-center gap-3 px-4 py-3 text-left
-                  hover:bg-[#1a1a1a] transition-colors
-                  ${value === language.code ? 'bg-emerald-500/10 text-emerald-400' : 'text-white'}
+                  hover:bg-gray-50 transition-colors
+                  ${value === language.code ? 'bg-emerald-50 text-emerald-600' : 'text-gray-900'}
                 `}
               >
                 <span className="text-xl">{language.flag}</span>

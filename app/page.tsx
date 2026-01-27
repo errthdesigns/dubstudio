@@ -68,9 +68,9 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-[#2a2a2a]">
+      <header className="border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -78,9 +78,9 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">DubStudio</h1>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">DubStudio</h1>
           </div>
-          <div className="hidden sm:flex items-center gap-2 text-sm text-gray-400">
+          <div className="hidden sm:flex items-center gap-2 text-sm text-gray-500">
             <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
             AI-Powered
           </div>
@@ -90,17 +90,17 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-3xl mx-auto px-6 py-12">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-sm mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-full text-emerald-600 text-sm mb-6">
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
             </svg>
             Instant AI Dubbing
           </div>
-          <h2 className="text-4xl font-bold text-white mb-4 tracking-tight">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4 tracking-tight">
             Transform your videos into<br />
-            <span className="text-emerald-400">any language</span>
+            <span className="text-emerald-500">any language</span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">
+          <p className="text-gray-600 text-lg max-w-xl mx-auto leading-relaxed">
             Upload your video and let AI handle the transcription, translation, and voice synthesis. 
             Perfect dubbing in seconds, not hours.
           </p>
@@ -110,10 +110,10 @@ export default function Home() {
           {/* Step 1: Upload */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-medium">
                 1
               </div>
-              <h3 className="text-lg font-medium text-white">Upload your video</h3>
+              <h3 className="text-lg font-medium text-gray-900">Upload your video</h3>
             </div>
             <VideoUpload
               onFileSelect={setSelectedFile}
@@ -124,10 +124,10 @@ export default function Home() {
           {/* Step 2: Select Language */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm font-medium">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm font-medium">
                 2
               </div>
-              <h3 className="text-lg font-medium text-white">Select target language</h3>
+              <h3 className="text-lg font-medium text-gray-900">Select target language</h3>
             </div>
             <LanguageSelector
               value={targetLanguage}
@@ -138,7 +138,7 @@ export default function Home() {
 
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
               {error}
             </div>
           )}
@@ -147,10 +147,10 @@ export default function Home() {
           {isUploading && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-400">Processing video...</span>
-                <span className="text-emerald-400">{uploadProgress}%</span>
+                <span className="text-gray-600">Processing video...</span>
+                <span className="text-emerald-600">{uploadProgress}%</span>
               </div>
-              <div className="h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-emerald-500 transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
@@ -166,8 +166,8 @@ export default function Home() {
             className={`
               w-full py-4 rounded-lg font-medium text-lg transition-all
               ${selectedFile && !isUploading
-                ? 'bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer'
-                : 'bg-[#1a1a1a] text-gray-500 cursor-not-allowed'
+                ? 'bg-emerald-500 hover:bg-emerald-600 text-white cursor-pointer shadow-lg shadow-emerald-500/20'
+                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }
             `}
           >

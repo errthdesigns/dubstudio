@@ -82,9 +82,9 @@ export default function TranscriptionPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 border-b border-[#2a2a2a] bg-[#0d0d0d]">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-white">Transcription</span>
+          <span className="text-sm font-medium text-gray-900">Transcription</span>
           <span className="text-xs text-gray-500">{segments.length} segments</span>
         </div>
       </div>

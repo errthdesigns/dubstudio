@@ -690,15 +690,15 @@ export default function StudioPage() {
 
   if (status === 'processing') {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-          <h2 className="text-xl font-medium text-white mb-2">Processing your video</h2>
-          <p className="text-gray-400">This may take a few minutes...</p>
+          <h2 className="text-xl font-medium text-gray-900 mb-2">Processing your video</h2>
+          <p className="text-gray-600">This may take a few minutes...</p>
           <p className="text-sm text-gray-500 mt-4">
             Transcribing audio, detecting speakers, and generating dubbed audio
           </p>
-          <div className="mt-8 text-xs text-gray-600">
+          <div className="mt-8 text-xs text-gray-400">
             Project ID: {dubbingId}
           </div>
         </div>
@@ -708,15 +708,15 @@ export default function StudioPage() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h2 className="text-xl font-medium text-white mb-2">Processing failed</h2>
-          <p className="text-gray-400 mb-6">{error || 'An error occurred while processing your video'}</p>
+          <h2 className="text-xl font-medium text-gray-900 mb-2">Processing failed</h2>
+          <p className="text-gray-600 mb-6">{error || 'An error occurred while processing your video'}</p>
           <button
             onClick={() => router.push('/')}
             className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors"
@@ -729,13 +729,13 @@ export default function StudioPage() {
   }
 
   return (
-    <div className="h-screen bg-[#0a0a0a] flex flex-col overflow-hidden">
+    <div className="h-screen bg-white flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-[#2a2a2a] px-4 py-3 flex items-center justify-between">
+      <header className="flex-shrink-0 border-b border-gray-200 px-4 py-3 flex items-center justify-between bg-white">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push('/')}
-            className="text-gray-400 hover:text-white transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -747,12 +747,12 @@ export default function StudioPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
               </svg>
             </div>
-            <span className="text-sm font-semibold text-white">DubStudio</span>
+            <span className="text-sm font-semibold text-gray-900">DubStudio</span>
           </div>
         </div>
 
         <div className="flex-1 text-center">
-          <h1 className="text-sm font-medium text-white truncate max-w-md mx-auto">
+          <h1 className="text-sm font-medium text-gray-900 truncate max-w-md mx-auto">
             {fileName || 'Untitled Project'}
           </h1>
         </div>
@@ -761,7 +761,7 @@ export default function StudioPage() {
           <span className="text-xs text-gray-500">
             {isSaving ? 'Saving changes...' : 'All changes saved'}
           </span>
-          <button className="text-gray-400 hover:text-white transition-colors">
+          <button className="text-gray-400 hover:text-gray-600 transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -773,7 +773,7 @@ export default function StudioPage() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Transcriptions */}
-        <div className="w-[400px] flex-shrink-0 border-r border-[#2a2a2a] overflow-hidden">
+        <div className="w-[400px] flex-shrink-0 border-r border-gray-200 overflow-hidden bg-gray-50">
           <TranscriptionPanel
             speakers={speakers}
             segments={segments}
@@ -785,7 +785,7 @@ export default function StudioPage() {
         </div>
 
         {/* Right Panel - Video Player */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-100">
           <div className="flex-1 p-4 overflow-hidden">
             {videoUrl ? (
               <VideoPlayer
@@ -799,7 +799,7 @@ export default function StudioPage() {
                 onPause={() => setIsPlaying(false)}
               />
             ) : (
-              <div className="h-full bg-[#141414] rounded-lg flex items-center justify-center">
+              <div className="h-full bg-gray-200 rounded-lg flex items-center justify-center">
                 <p className="text-gray-500">No video loaded</p>
               </div>
             )}
@@ -808,7 +808,7 @@ export default function StudioPage() {
       </div>
 
       {/* Timeline */}
-      <div className="flex-shrink-0 min-h-[200px] max-h-[300px] overflow-y-auto border-t border-[#2a2a2a]">
+      <div className="flex-shrink-0 min-h-[200px] max-h-[300px] overflow-y-auto border-t border-gray-200 bg-gray-50">
         <Timeline
           tracks={tracks}
           duration={duration || 30}
@@ -820,11 +820,11 @@ export default function StudioPage() {
       </div>
 
       {/* Bottom Bar */}
-      <div className="flex-shrink-0 border-t border-[#2a2a2a] px-4 py-3 flex items-center justify-between bg-[#0d0d0d]">
+      <div className="flex-shrink-0 border-t border-gray-200 px-4 py-3 flex items-center justify-between bg-white">
         <div className="flex items-center gap-4">
           <span className="text-xs text-gray-500">Free credits remaining: 7666</span>
           {dubbedAudioUrl && (
-            <span className="text-xs text-emerald-500">✓ Dubbed audio ready</span>
+            <span className="text-xs text-emerald-600">✓ Dubbed audio ready</span>
           )}
         </div>
 
@@ -833,8 +833,8 @@ export default function StudioPage() {
             onClick={() => handleLanguageToggle('original')}
             className={`px-4 py-2 text-sm rounded-lg transition-colors ${
               activeLanguage === 'original'
-                ? 'bg-[#1a1a1a] text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-gray-200 text-gray-900'
+                : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             Original
@@ -843,8 +843,8 @@ export default function StudioPage() {
             onClick={() => handleLanguageToggle('dubbed')}
             className={`px-4 py-2 text-sm rounded-lg transition-colors ${
               activeLanguage === 'dubbed'
-                ? 'bg-emerald-600 text-white'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-emerald-500 text-white'
+                : 'text-gray-500 hover:text-gray-900'
             }`}
           >
             {LANGUAGE_NAMES[targetLanguage] || targetLanguage}
@@ -854,7 +854,7 @@ export default function StudioPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleExportAudio}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors"
+            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
           >
             Generate Stale Audio
           </button>

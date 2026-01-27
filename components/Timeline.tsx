@@ -79,14 +79,14 @@ export default function Timeline({
   };
 
   return (
-    <div className="bg-[#0d0d0d] border-t border-[#2a2a2a]">
+    <div className="bg-white border-t border-gray-200">
       {/* Timeline Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#2a2a2a]">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
         <div className="flex items-center gap-4">
-          <button className="px-3 py-1 text-xs rounded bg-[#1a1a1a] text-gray-400 hover:text-white transition-colors">
+          <button className="px-3 py-1 text-xs rounded bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors">
             Original
           </button>
-          <button className="px-3 py-1 text-xs rounded bg-emerald-600 text-white">
+          <button className="px-3 py-1 text-xs rounded bg-emerald-500 text-white">
             {selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1)}
           </button>
         </div>
@@ -108,19 +108,19 @@ export default function Timeline({
       {/* Timeline Content */}
       <div className="flex">
         {/* Track Labels */}
-        <div className="w-40 flex-shrink-0 border-r border-[#2a2a2a]">
+        <div className="w-40 flex-shrink-0 border-r border-gray-200 bg-gray-50">
           {/* Time ruler label */}
-          <div className="h-8 border-b border-[#2a2a2a]" />
+          <div className="h-8 border-b border-gray-200" />
           
           {tracks.map((track) => (
             <div
               key={track.id}
-              className="h-12 flex items-center px-3 border-b border-[#1a1a1a] gap-2"
+              className="h-12 flex items-center px-3 border-b border-gray-100 gap-2"
             >
               <button
                 onClick={() => onTrackMuteToggle?.(track.id)}
                 className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${
-                  track.muted ? 'bg-[#2a2a2a] text-gray-500' : 'bg-[#1a1a1a] text-white'
+                  track.muted ? 'bg-gray-200 text-gray-400' : 'bg-gray-100 text-gray-700'
                 }`}
               >
                 {track.muted ? (
@@ -141,7 +141,7 @@ export default function Timeline({
                     style={{ backgroundColor: track.color }}
                   />
                 )}
-                <span className="text-xs text-gray-400 truncate">{track.name}</span>
+                <span className="text-xs text-gray-600 truncate">{track.name}</span>
               </div>
             </div>
           ))}
@@ -156,7 +156,7 @@ export default function Timeline({
           <div style={{ width: Math.max(totalWidth, 600) }}>
             {/* Time Ruler */}
             <div
-              className="h-8 border-b border-[#2a2a2a] relative cursor-pointer"
+              className="h-8 border-b border-gray-200 relative cursor-pointer bg-gray-50"
               onClick={handleTimelineClick}
             >
               {generateTimeMarkers().map((time) => (
@@ -165,7 +165,7 @@ export default function Timeline({
                   className="absolute top-0 h-full flex flex-col items-center"
                   style={{ left: time * pixelsPerSecond }}
                 >
-                  <div className="h-2 w-px bg-[#3a3a3a]" />
+                  <div className="h-2 w-px bg-gray-300" />
                   <span className="text-[10px] text-gray-500 mt-1">{formatTime(time)}</span>
                 </div>
               ))}
@@ -183,11 +183,11 @@ export default function Timeline({
             {tracks.map((track, trackIndex) => (
               <div
                 key={track.id}
-                className="h-12 border-b border-[#1a1a1a] relative cursor-pointer"
+                className="h-12 border-b border-gray-100 relative cursor-pointer"
                 onClick={handleTimelineClick}
               >
                 {/* Track Background */}
-                <div className="absolute inset-0 bg-[#0d0d0d]" />
+                <div className="absolute inset-0 bg-white" />
                 
                 {/* Segments */}
                 {track.segments.map((segment, segIndex) => {
