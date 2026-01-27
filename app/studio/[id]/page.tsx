@@ -203,6 +203,129 @@ export default function StudioPage() {
     try {
       console.log('Fetching transcripts...');
       
+      // First, try to get the resource data with proper speaker segments
+      let resourceData: any = null;
+      try {
+        console.log('Trying to fetch dubbing resource with speaker data...');
+        const resourceResponse = await fetch(`/api/dubbing/${dubbingId}/resource`);
+        if (resourceResponse.ok) {
+          resourceData = await resourceResponse.json();
+          console.log('Resource data received:', {
+            speakers: resourceData.extracted_speakers?.length,
+            segments: resourceData.extracted_segments?.length,
+          });
+        } else {
+          console.log('Resource endpoint not available:', resourceResponse.status);
+        }
+      } catch (e) {
+        console.log('Could not fetch resource data:', e);
+      }
+      
+      // If we have resource data with segments, use that
+      if (resourceData?.extracted_segments?.length > 0) {
+        console.log('Using segments from resource API');
+        
+        // Get original transcript from sessionStorage for original text
+        let originalTranscript: any = { segments: [] };
+        const storedTranscript = sessionStorage.getItem('originalTranscript');
+        if (storedTranscript) {
+          try {
+            originalTranscript = JSON.parse(storedTranscript);
+          } catch (e) {}
+        }
+        
+        // Process speakers from resource
+        const speakerMap = new Map<string, Speaker>();
+        const processedSegments: Segment[] = [];
+        
+        // Add speakers
+        resourceData.extracted_speakers?.forEach((speaker: any, idx: number) => {
+          speakerMap.set(speaker.id, {
+            id: speaker.id,
+            name: speaker.name || `Speaker ${idx + 1}`,
+          });
+        });
+        
+        // Add segments with proper speaker assignment
+        resourceData.extracted_segments?.forEach((seg: any, index: number) => {
+          // Find matching original segment by time
+          const origSeg = originalTranscript.segments?.find((s: any) => 
+            Math.abs((s.start || 0) - (seg.start || 0)) < 2
+          );
+          
+          processedSegments.push({
+            id: seg.id || `seg_${index}`,
+            speakerId: seg.speaker_id || 'speaker_1',
+            startTime: seg.start || 0,
+            endTime: seg.end || 0,
+            originalText: origSeg?.text || seg.text || '',
+            translatedText: seg.translated_text || seg.text || '',
+          });
+        });
+        
+        const speakersArray = Array.from(speakerMap.values());
+        setSpeakers(speakersArray);
+        setSegments(processedSegments);
+        
+        console.log('Processed from resource:', processedSegments.length, 'segments,', speakersArray.length, 'speakers');
+        
+        if (speakersArray.length > 0) {
+          fetchVoices(speakersArray);
+        }
+        
+        // Build timeline tracks
+        const videoDuration = duration || 30;
+        const timelineTracks: TimelineTrack[] = [
+          {
+            id: 'original',
+            name: 'Original sound',
+            type: 'original',
+            muted: activeLanguage === 'dubbed',
+            segments: [{ id: 'orig_1', startTime: 0, endTime: videoDuration }],
+          },
+          {
+            id: 'background',
+            name: 'Background',
+            type: 'background',
+            muted: false,
+            segments: [{ id: 'bg_1', startTime: 0, endTime: videoDuration }],
+          },
+          {
+            id: 'foreground',
+            name: 'Foreground',
+            type: 'foreground',
+            muted: false,
+            segments: [],
+          },
+        ];
+        
+        // Add speaker tracks
+        speakersArray.forEach((speaker, index) => {
+          const speakerSegs = processedSegments
+            .filter(s => s.speakerId === speaker.id)
+            .map(s => ({
+              id: s.id,
+              startTime: s.startTime,
+              endTime: s.endTime,
+            }));
+
+          timelineTracks.push({
+            id: `speaker_${speaker.id}`,
+            name: `${speaker.name}\nOriginal`,
+            type: 'speaker',
+            color: SPEAKER_COLORS[index % SPEAKER_COLORS.length],
+            muted: false,
+            segments: speakerSegs,
+          });
+        });
+        
+        setTracks(timelineTracks);
+        return;
+      }
+      
+      // Fallback: use original transcript approach
+      console.log('Falling back to transcript API...');
+      
       // Get original transcript from sessionStorage (stored during upload)
       let originalTranscript: any = { segments: [] };
       
