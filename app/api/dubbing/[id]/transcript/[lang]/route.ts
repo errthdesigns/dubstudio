@@ -75,7 +75,7 @@ function parseSRT(srtContent: string): { segments: any[] } {
 }
 
 // Assign speakers based on timing and dialogue patterns
-// Uses multiple heuristics to detect speaker changes
+// Uses conservative heuristics - Speaker 1 is default (main speaker)
 function assignSpeakersFromTiming(segments: any[]) {
   // First check if any segments already have speaker IDs from markers
   const hasExistingSpeakers = segments.some(s => s.speaker_id !== null);
@@ -92,47 +92,40 @@ function assignSpeakersFromTiming(segments: any[]) {
     }
     console.log('Using speaker markers from SRT');
   } else {
-    // No markers found - use multi-factor detection
-    console.log('No speaker markers found - using heuristic detection');
+    // No markers found - use conservative detection
+    // Default: Speaker 1 is the main speaker, only switch on STRONG evidence
+    console.log('No speaker markers found - using conservative detection');
     console.log('Segment gaps:', segments.map(s => s.gap?.toFixed(2)).join(', '));
+    
+    // Calculate average gap to find significant pauses
+    const gaps = segments.map(s => s.gap || 0).filter(g => g > 0);
+    const avgGap = gaps.length > 0 ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+    const maxGap = Math.max(...gaps, 0);
+    console.log(`Average gap: ${avgGap.toFixed(2)}s, Max gap: ${maxGap.toFixed(2)}s`);
     
     let currentSpeaker = 1;
     const speakerChanges: number[] = [0];
-    
-    // Calculate average segment duration for comparison
-    const avgDuration = segments.reduce((sum, s) => sum + (s.end - s.start), 0) / segments.length;
     
     for (let i = 0; i < segments.length; i++) {
       const seg = segments[i];
       const gap = seg.gap || 0;
       const prevSeg = i > 0 ? segments[i - 1] : null;
-      const segDuration = seg.end - seg.start;
-      const prevDuration = prevSeg ? (prevSeg.end - prevSeg.start) : 0;
       
       let shouldSwitch = false;
       
-      // Factor 1: Time gap > 0.15 seconds (lowered threshold)
-      if (gap > 0.15) {
+      // Only switch on SIGNIFICANT gaps (> 0.5s AND above average)
+      // This is more conservative - main speaker stays Speaker 1
+      if (i > 0 && gap > 0.5 && gap > avgGap * 1.5) {
         shouldSwitch = true;
-        console.log(`Segment ${i}: gap ${gap.toFixed(2)}s triggers switch`);
+        console.log(`Segment ${i}: significant gap ${gap.toFixed(2)}s triggers switch`);
       }
       
-      // Factor 2: Segment duration change (short->long or long->short often indicates speaker change)
-      if (prevSeg && !shouldSwitch) {
-        const durationRatio = segDuration / prevDuration;
-        if (durationRatio > 2.5 || durationRatio < 0.4) {
-          shouldSwitch = true;
-          console.log(`Segment ${i}: duration change ${prevDuration.toFixed(2)}s -> ${segDuration.toFixed(2)}s triggers switch`);
-        }
-      }
-      
-      // Factor 3: Content patterns (questions often get responses from different speaker)
-      if (prevSeg && !shouldSwitch) {
+      // Also switch on question-response pattern with gap
+      if (prevSeg && !shouldSwitch && gap > 0.2) {
         const prevText = prevSeg.text || '';
-        // If previous ends with ? and current doesn't start like a question, might be a response
-        if (prevText.endsWith('?') && !seg.text?.startsWith('¿') && !seg.text?.startsWith('?')) {
+        if (prevText.endsWith('?')) {
           shouldSwitch = true;
-          console.log(`Segment ${i}: question-response pattern triggers switch`);
+          console.log(`Segment ${i}: question with gap triggers switch`);
         }
       }
       
@@ -142,29 +135,6 @@ function assignSpeakersFromTiming(segments: any[]) {
       }
       
       seg.speaker_id = `speaker_${currentSpeaker}`;
-    }
-    
-    // If we only detected 1 speaker and there are multiple segments,
-    // try alternating pattern for dialogue-heavy content
-    const speakerDist: Record<string, number> = {};
-    segments.forEach(s => {
-      speakerDist[s.speaker_id] = (speakerDist[s.speaker_id] || 0) + 1;
-    });
-    
-    if (Object.keys(speakerDist).length === 1 && segments.length > 3) {
-      console.log('Only 1 speaker detected - trying alternating pattern based on segment groups');
-      
-      // Group consecutive short segments vs longer segments
-      // Short segments (< avg) tend to be responses, long segments tend to be main speaker
-      segments.forEach((seg, i) => {
-        const segDuration = seg.end - seg.start;
-        // Shorter segments are likely the secondary speaker
-        if (segDuration < avgDuration * 0.7) {
-          seg.speaker_id = 'speaker_2';
-        } else {
-          seg.speaker_id = 'speaker_1';
-        }
-      });
     }
     
     console.log(`Detected speaker changes at segments: ${speakerChanges.join(', ')}`);
