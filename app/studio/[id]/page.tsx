@@ -618,6 +618,14 @@ export default function StudioPage() {
     setTimeout(() => setIsSaving(false), 1000);
   };
 
+  const handleSegmentSpeakerChange = (segmentId: string, speakerId: string) => {
+    setSegments(prev =>
+      prev.map(s => (s.id === segmentId ? { ...s, speakerId } : s))
+    );
+    setIsSaving(true);
+    setTimeout(() => setIsSaving(false), 1000);
+  };
+
   const handleTrackMuteToggle = (trackId: string) => {
     setTracks(prev =>
       prev.map(t => (t.id === trackId ? { ...t, muted: !t.muted } : t))
@@ -782,6 +790,7 @@ export default function StudioPage() {
             speakerVoices={speakerVoices}
             onSegmentOriginalChange={handleSegmentOriginalChange}
             onSegmentTranslatedChange={handleSegmentTranslatedChange}
+            onSegmentSpeakerChange={handleSegmentSpeakerChange}
             onVoiceSelect={handleVoiceSelect}
           />
         </div>

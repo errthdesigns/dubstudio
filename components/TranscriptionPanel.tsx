@@ -37,6 +37,7 @@ interface TranscriptionPanelProps {
   speakerVoices?: SpeakerVoiceData[];
   onSegmentOriginalChange: (segmentId: string, text: string) => void;
   onSegmentTranslatedChange: (segmentId: string, text: string) => void;
+  onSegmentSpeakerChange?: (segmentId: string, speakerId: string) => void;
   onVoiceSelect?: (speakerId: string, voiceId: string) => void;
   onTranscribe?: (speakerId: string) => void;
   onGenerateAudio?: (speakerId: string) => void;
@@ -49,6 +50,7 @@ export default function TranscriptionPanel({
   speakerVoices,
   onSegmentOriginalChange,
   onSegmentTranslatedChange,
+  onSegmentSpeakerChange,
   onVoiceSelect,
   onTranscribe,
   onGenerateAudio,
@@ -78,6 +80,13 @@ export default function TranscriptionPanel({
 
   // Sort segments by start time for chronological display
   const sortedSegments = [...segments].sort((a, b) => a.startTime - b.startTime);
+
+  // Build available speakers list with colors for the dropdown
+  const availableSpeakers = speakers.map((speaker, index) => ({
+    id: speaker.id,
+    name: speaker.name,
+    color: SPEAKER_COLORS[index % SPEAKER_COLORS.length],
+  }));
 
   return (
     <div className="flex flex-col h-full">
@@ -109,6 +118,8 @@ export default function TranscriptionPanel({
               similarVoices={voiceData?.similarVoices}
               onVoiceSelect={onVoiceSelect ? (voiceId) => onVoiceSelect(segment.speakerId, voiceId) : undefined}
               showVoiceSelector={!!speakerVoices && speakerVoices.length > 0}
+              availableSpeakers={availableSpeakers}
+              onSpeakerChange={onSegmentSpeakerChange ? (speakerId) => onSegmentSpeakerChange(segment.id, speakerId) : undefined}
             />
           );
         })}

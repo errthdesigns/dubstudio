@@ -11,6 +11,12 @@ interface Voice {
   preview_url?: string;
 }
 
+interface Speaker {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface SpeakerCardProps {
   speakerName: string;
   speakerColor: string;
@@ -25,6 +31,8 @@ interface SpeakerCardProps {
   similarVoices?: Voice[];
   onVoiceSelect?: (voiceId: string) => void;
   showVoiceSelector?: boolean;
+  availableSpeakers?: Speaker[];
+  onSpeakerChange?: (speakerId: string) => void;
 }
 
 export default function SpeakerCard({
@@ -41,10 +49,13 @@ export default function SpeakerCard({
   similarVoices,
   onVoiceSelect,
   showVoiceSelector = true,
+  availableSpeakers = [],
+  onSpeakerChange,
 }: SpeakerCardProps) {
   const [isEditingOriginal, setIsEditingOriginal] = useState(false);
   const [isEditingTranslated, setIsEditingTranslated] = useState(false);
   const [scriptWasEdited, setScriptWasEdited] = useState(false);
+  const [isSpeakerDropdownOpen, setIsSpeakerDropdownOpen] = useState(false);
 
   // If we only have translated text (no original), show it prominently
   const hasOriginal = originalText && originalText.trim().length > 0;
@@ -54,12 +65,59 @@ export default function SpeakerCard({
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
       {/* Speaker Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50">
-        <div className="flex items-center gap-2">
-          <div
-            className="w-3 h-3 rounded-full flex-shrink-0"
-            style={{ backgroundColor: speakerColor }}
-          />
-          <span className="text-sm font-medium text-gray-900">{speakerName}</span>
+        <div className="relative">
+          <button
+            onClick={() => setIsSpeakerDropdownOpen(!isSpeakerDropdownOpen)}
+            className="flex items-center gap-2 hover:bg-gray-200 rounded px-2 py-1 -ml-2 transition-colors"
+          >
+            <div
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: speakerColor }}
+            />
+            <span className="text-sm font-medium text-gray-900">{speakerName}</span>
+            <svg
+              className={`w-3 h-3 text-gray-500 transition-transform ${isSpeakerDropdownOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {isSpeakerDropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setIsSpeakerDropdownOpen(false)}
+              />
+              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[140px]">
+                {availableSpeakers.map((speaker) => (
+                  <button
+                    key={speaker.id}
+                    onClick={() => {
+                      onSpeakerChange?.(speaker.id);
+                      setIsSpeakerDropdownOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg ${
+                      speaker.name === speakerName ? 'bg-emerald-50 text-emerald-700' : 'text-gray-700'
+                    }`}
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: speaker.color }}
+                    />
+                    {speaker.name}
+                    {speaker.name === speakerName && (
+                      <svg className="w-4 h-4 ml-auto text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
         
         {showVoiceSelector && (
