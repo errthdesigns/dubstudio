@@ -24,6 +24,16 @@ export async function GET(
     }
 
     const data = await response.json();
+    
+    // Log detailed dubbing info for debugging
+    console.log('Dubbing project details:', {
+      id: data.dubbing_id,
+      status: data.status,
+      source_language: data.source_language,
+      target_languages: data.target_languages,
+      error: data.error,
+    });
+    
     return NextResponse.json(data);
   } catch (error) {
     console.error('Get dubbing error:', error);

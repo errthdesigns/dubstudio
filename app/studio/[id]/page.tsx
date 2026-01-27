@@ -112,6 +112,18 @@ export default function StudioPage() {
           setStatus('ready');
           clearInterval(pollInterval);
           
+          // Log what languages are available
+          console.log('Dubbing complete!');
+          console.log('Source language:', data.source_language);
+          console.log('Target languages:', data.target_languages);
+          
+          // Use the actual target language from ElevenLabs response if available
+          const actualTargetLang = data.target_languages?.[0] || targetLanguage;
+          if (actualTargetLang !== targetLanguage) {
+            console.log(`Using actual target language: ${actualTargetLang} instead of ${targetLanguage}`);
+            setTargetLanguage(actualTargetLang);
+          }
+          
           // Fetch transcripts and dubbed audio (voices are fetched inside fetchTranscripts)
           await fetchTranscripts();
           await fetchDubbedAudio();
@@ -133,15 +145,25 @@ export default function StudioPage() {
 
   const fetchDubbedAudio = async () => {
     try {
+      // Get the current target language (might have been updated from ElevenLabs response)
+      const lang = sessionStorage.getItem('targetLanguage') || targetLanguage;
+      console.log(`Fetching dubbed audio for language: ${lang}`);
+      
       // Fetch the dubbed audio and create a blob URL
-      const response = await fetch(`/api/dubbing/${dubbingId}/audio/${targetLanguage}`);
+      const response = await fetch(`/api/dubbing/${dubbingId}/audio/${lang}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         setDubbedAudioUrl(url);
         console.log('Dubbed audio loaded:', url);
       } else {
-        console.error('Failed to fetch dubbed audio');
+        const errorText = await response.text();
+        console.error('Failed to fetch dubbed audio:', response.status, errorText);
+        
+        // If 404, the dubbing might still be processing or failed
+        if (response.status === 404) {
+          console.log('Dubbed audio not available yet - dubbing may still be in progress');
+        }
       }
     } catch (err) {
       console.error('Error fetching dubbed audio:', err);
@@ -209,15 +231,25 @@ export default function StudioPage() {
       }
 
       // Fetch translated transcript
+      // Use the target language from sessionStorage (may have been updated from ElevenLabs)
+      const lang = sessionStorage.getItem('targetLanguage') || targetLanguage;
       let translatedTranscript: any = { segments: [] };
       try {
-        const translatedResponse = await fetch(`/api/dubbing/${dubbingId}/transcript/${targetLanguage}`);
+        console.log(`Fetching translated transcript for language: ${lang}`);
+        const translatedResponse = await fetch(`/api/dubbing/${dubbingId}/transcript/${lang}`);
         if (translatedResponse.ok) {
           translatedTranscript = await translatedResponse.json();
-          console.log(`Translated (${targetLanguage}) transcript segments:`, translatedTranscript.segments?.length);
+          console.log(`Translated (${lang}) transcript segments:`, translatedTranscript.segments?.length);
+          
+          // Log first segment to verify it's actually translated
+          if (translatedTranscript.segments?.length > 0) {
+            console.log(`First translated segment: "${translatedTranscript.segments[0].text}"`);
+          }
+        } else {
+          console.log(`Translated transcript not available: ${translatedResponse.status}`);
         }
       } catch (e) {
-        console.log(`Could not fetch ${targetLanguage} transcript`);
+        console.log(`Could not fetch ${lang} transcript:`, e);
       }
 
       // Process speakers and segments
