@@ -754,7 +754,7 @@ export default function StudioPage() {
       </div>
 
       {/* Timeline */}
-      <div className="flex-shrink-0 h-[200px] border-t border-[#2a2a2a]">
+      <div className="flex-shrink-0 min-h-[200px] max-h-[300px] overflow-y-auto border-t border-[#2a2a2a]">
         <Timeline
           tracks={tracks}
           duration={duration || 30}

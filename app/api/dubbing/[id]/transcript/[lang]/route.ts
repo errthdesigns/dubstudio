@@ -6,6 +6,9 @@ const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1';
 function parseSRT(srtContent: string): { segments: any[] } {
   const segments: any[] = [];
   
+  // Log raw SRT for debugging
+  console.log('Raw SRT preview:', srtContent.substring(0, 500));
+  
   // Split by double newline to get individual subtitle blocks
   const blocks = srtContent.trim().split(/\n\n+/);
   
@@ -28,25 +31,42 @@ function parseSRT(srtContent: string): { segments: any[] } {
     const endTime = parseTimestamp(timestampMatch[2]);
     const text = lines.slice(2).join(' ').trim();
     
-    // Check for explicit speaker markers in text
-    const speakerMatch = text.match(/^(?:\[?(Speaker\s*(\d+)|S(\d+))\]?:?\s*)?(.+)$/i);
-    const cleanText = speakerMatch?.[4] || text;
+    // Check for various speaker marker formats in the text
+    // Format 1: [Speaker 1]: text or Speaker 1: text
+    // Format 2: speaker_0, speaker_1, etc.
+    // Format 3: S1:, S2:, etc.
+    let speakerId = null;
+    let cleanText = text;
+    
+    // Check for speaker markers at start of text
+    const speakerPatterns = [
+      /^\[?(?:speaker[_\s]*(\d+))\]?[:\s]+(.+)$/i,  // speaker_1: or [speaker 1]: 
+      /^\[?S(\d+)\]?[:\s]+(.+)$/i,                   // S1: or [S1]:
+      /^(?:Person|Voice|Speaker)\s*(\d+)[:\s]+(.+)$/i, // Person 1: Voice 2:
+    ];
+    
+    for (const pattern of speakerPatterns) {
+      const match = text.match(pattern);
+      if (match) {
+        speakerId = `speaker_${match[1]}`;
+        cleanText = match[2].trim();
+        break;
+      }
+    }
     
     segments.push({
       start: startTime,
       end: endTime,
       text: cleanText,
-      speaker_id: 'speaker_1', // Will be assigned below
+      speaker_id: speakerId, // null if not found, will be assigned below
       gap: startTime - lastEndTime,
     });
     
     lastEndTime = endTime;
   }
   
-  // Smart speaker assignment based on dialogue patterns
-  if (segments.length > 0) {
-    assignSpeakers(segments);
-  }
+  // Assign speakers based on timing patterns if no markers found
+  assignSpeakersFromTiming(segments);
   
   // Remove gap property before returning
   segments.forEach(s => delete s.gap);
@@ -54,39 +74,50 @@ function parseSRT(srtContent: string): { segments: any[] } {
   return { segments };
 }
 
-// Assign speakers based on dialogue patterns and content analysis
-// Speaker 1 = Man, Speaker 2 = Robot, Speaker 3 = Woman (only says "It's an ad")
-function assignSpeakers(segments: any[]) {
-  for (let i = 0; i < segments.length; i++) {
-    const seg = segments[i];
-    const text = seg.text.toLowerCase();
+// Assign speakers based on timing and dialogue patterns
+// Uses gaps between segments to detect speaker changes
+function assignSpeakersFromTiming(segments: any[]) {
+  // First check if any segments already have speaker IDs from markers
+  const hasExistingSpeakers = segments.some(s => s.speaker_id !== null);
+  
+  if (hasExistingSpeakers) {
+    // Fill in gaps for segments without speaker IDs
+    let lastSpeaker = 'speaker_1';
+    for (const seg of segments) {
+      if (seg.speaker_id) {
+        lastSpeaker = seg.speaker_id;
+      } else {
+        seg.speaker_id = lastSpeaker;
+      }
+    }
+    console.log('Using speaker markers from SRT');
+  } else {
+    // No markers found - use timing-based detection
+    // When there's a gap > 0.5 seconds, it often indicates a speaker change
+    console.log('No speaker markers found - using timing-based detection');
     
-    let speaker = 1; // Default to Speaker 1 (Man)
+    let currentSpeaker = 1;
+    const speakerChanges: number[] = [0]; // Track where speaker changes happen
     
-    // SPEAKER 3 - WOMAN (only says "It's an ad" / "C'est une pub")
-    if (text.includes("it's an ad") || text.includes("its an ad") || 
-        text.includes("c'est une pub") || text.includes('cest une pub')) {
-      speaker = 3;
+    for (let i = 0; i < segments.length; i++) {
+      const seg = segments[i];
+      const gap = seg.gap || 0;
+      
+      // Detect speaker change based on:
+      // 1. Time gap > 0.4 seconds between segments
+      // 2. Short segment followed by longer segment (response pattern)
+      const prevSeg = i > 0 ? segments[i - 1] : null;
+      
+      if (i > 0 && gap > 0.4) {
+        // Toggle speaker on significant gap
+        currentSpeaker = currentSpeaker === 1 ? 2 : 1;
+        speakerChanges.push(i);
+      }
+      
+      seg.speaker_id = `speaker_${currentSpeaker}`;
     }
     
-    // SPEAKER 2 - ROBOT patterns
-    // Robot says things about being obsolete, references Metal Man, talks to Brett
-    else if (text.includes('obsolete') || text.includes('obsolète') ||
-             text.includes('metal man') || text.includes('homme de métal') ||
-             text.includes('did you see that') || text.includes('as-tu vu') ||
-             text.includes('brett') || text.includes('cleans toilets') || 
-             text.includes('nettoie les toilettes') || text.includes('faster than') ||
-             text.includes('plus vite que')) {
-      speaker = 2;
-    }
-    
-    // SPEAKER 1 - MAN (main spokesperson, product explanations, reactions)
-    // Everything else is the Man
-    else {
-      speaker = 1;
-    }
-    
-    segments[i].speaker_id = `speaker_${speaker}`;
+    console.log(`Detected speaker changes at segments: ${speakerChanges.join(', ')}`);
   }
   
   // Log speaker distribution
