@@ -81,12 +81,12 @@ export default function TranscriptionPanel({
   // Sort segments by start time for chronological display
   const sortedSegments = [...segments].sort((a, b) => a.startTime - b.startTime);
 
-  // Build available speakers list with colors for the dropdown
-  const availableSpeakers = speakers.map((speaker, index) => ({
-    id: speaker.id,
-    name: speaker.name,
-    color: SPEAKER_COLORS[index % SPEAKER_COLORS.length],
-  }));
+  // Always show Speaker 1, 2, 3 as available options for the dropdown
+  const availableSpeakers = [
+    { id: 'speaker-1', name: 'Speaker 1', color: SPEAKER_COLORS[0] },
+    { id: 'speaker-2', name: 'Speaker 2', color: SPEAKER_COLORS[1] },
+    { id: 'speaker-3', name: 'Speaker 3', color: SPEAKER_COLORS[2] },
+  ];
 
   return (
     <div className="flex flex-col h-full">
