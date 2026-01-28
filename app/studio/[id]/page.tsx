@@ -81,7 +81,8 @@ export default function StudioPage() {
   const [activeLanguage, setActiveLanguage] = useState<'original' | 'dubbed'>('dubbed');
   const [isSaving, setIsSaving] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
-  const [voicesChanged, setVoicesChanged] = useState(false);
+  const [needsRegeneration, setNeedsRegeneration] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Load video URL from session storage
   useEffect(() => {
@@ -614,6 +615,19 @@ export default function StudioPage() {
 
   const handleDurationChange = useCallback((dur: number) => {
     setDuration(dur);
+    // Update track durations when actual video duration is known
+    setTracks(prev => prev.map(track => {
+      if (track.type === 'original' || track.type === 'background') {
+        return {
+          ...track,
+          segments: track.segments.map(seg => ({
+            ...seg,
+            endTime: dur,
+          })),
+        };
+      }
+      return track;
+    }));
   }, []);
 
   const handleSeek = useCallback((time: number) => {
@@ -632,6 +646,42 @@ export default function StudioPage() {
     setSegments(prev =>
       prev.map(s => (s.id === segmentId ? { ...s, translatedText: text } : s))
     );
+    setNeedsRegeneration(true);
+    setIsSaving(true);
+    setTimeout(() => setIsSaving(false), 1000);
+  };
+
+  const handleSegmentSpeakerChange = (segmentId: string, newSpeakerId: string) => {
+    setSegments(prev =>
+      prev.map(s => (s.id === segmentId ? { ...s, speakerId: newSpeakerId } : s))
+    );
+    
+    // Update timeline tracks to reflect the speaker change
+    setTracks(prev => {
+      const updatedTracks = [...prev];
+      const segment = segments.find(s => s.id === segmentId);
+      if (segment) {
+        // Remove segment from old speaker track
+        updatedTracks.forEach(track => {
+          if (track.type === 'speaker') {
+            track.segments = track.segments.filter(s => s.id !== segmentId);
+          }
+        });
+        // Add segment to new speaker track
+        const newSpeakerTrack = updatedTracks.find(t => t.id === `speaker_${newSpeakerId}`);
+        if (newSpeakerTrack) {
+          newSpeakerTrack.segments.push({
+            id: segmentId,
+            startTime: segment.startTime,
+            endTime: segment.endTime,
+          });
+          // Sort by start time
+          newSpeakerTrack.segments.sort((a, b) => a.startTime - b.startTime);
+        }
+      }
+      return updatedTracks;
+    });
+    
     setIsSaving(true);
     setTimeout(() => setIsSaving(false), 1000);
   };
@@ -654,8 +704,23 @@ export default function StudioPage() {
         return sv;
       })
     );
-    // Mark that voices have changed and regeneration is needed
-    setVoicesChanged(true);
+    // Mark that regeneration is needed
+    setNeedsRegeneration(true);
+  };
+
+  const handleRegenerateAudio = async () => {
+    setIsRegenerating(true);
+    try {
+      // In a full implementation, this would call the API to regenerate audio
+      // with the new voice selections and script changes
+      console.log('Regenerating audio with updated voices/scripts...');
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated delay
+      setNeedsRegeneration(false);
+    } catch (err) {
+      console.error('Failed to regenerate audio:', err);
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const handleExportVideo = async () => {
@@ -800,7 +865,11 @@ export default function StudioPage() {
             speakerVoices={speakerVoices}
             onSegmentOriginalChange={handleSegmentOriginalChange}
             onSegmentTranslatedChange={handleSegmentTranslatedChange}
+            onSegmentSpeakerChange={handleSegmentSpeakerChange}
             onVoiceSelect={handleVoiceSelect}
+            needsRegeneration={needsRegeneration}
+            isRegenerating={isRegenerating}
+            onRegenerateAudio={handleRegenerateAudio}
           />
         </div>
 
@@ -872,18 +941,6 @@ export default function StudioPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {voicesChanged && (
-            <button
-              onClick={() => {
-                // In a full implementation, this would regenerate the dubbed audio
-                console.log('Regenerating audio with new voice selections...');
-                setVoicesChanged(false);
-              }}
-              className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors"
-            >
-              Regenerate Audio
-            </button>
-          )}
           <div className="relative">
             <button 
               onClick={() => setShowExportMenu(!showExportMenu)}

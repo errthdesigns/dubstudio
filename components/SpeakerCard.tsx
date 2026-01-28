@@ -11,13 +11,22 @@ interface Voice {
   preview_url?: string;
 }
 
+interface AvailableSpeaker {
+  id: string;
+  name: string;
+  color: string;
+}
+
 interface SpeakerCardProps {
   speakerName: string;
+  speakerId: string;
   speakerColor: string;
   originalText: string;
   translatedText: string;
   onOriginalChange: (text: string) => void;
   onTranslatedChange: (text: string) => void;
+  onSpeakerChange?: (newSpeakerId: string) => void;
+  availableSpeakers?: AvailableSpeaker[];
   onTranscribe?: () => void;
   onGenerateAudio?: () => void;
   isProcessing?: boolean;
@@ -29,11 +38,14 @@ interface SpeakerCardProps {
 
 export default function SpeakerCard({
   speakerName,
+  speakerId,
   speakerColor,
   originalText,
   translatedText,
   onOriginalChange,
   onTranslatedChange,
+  onSpeakerChange,
+  availableSpeakers,
   onTranscribe,
   onGenerateAudio,
   isProcessing,
@@ -44,6 +56,7 @@ export default function SpeakerCard({
 }: SpeakerCardProps) {
   const [isEditingOriginal, setIsEditingOriginal] = useState(false);
   const [isEditingTranslated, setIsEditingTranslated] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // If we only have translated text (no original), show it prominently
   const hasOriginal = originalText && originalText.trim().length > 0;
@@ -53,12 +66,59 @@ export default function SpeakerCard({
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
       {/* Speaker Header */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 bg-gray-50">
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <div
             className="w-3 h-3 rounded-full flex-shrink-0"
             style={{ backgroundColor: speakerColor }}
           />
-          <span className="text-sm font-medium text-gray-900">{speakerName}</span>
+          {availableSpeakers && availableSpeakers.length > 0 && onSpeakerChange ? (
+            <div className="relative">
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="flex items-center gap-1 text-sm font-medium text-gray-900 hover:text-gray-700 focus:outline-none"
+              >
+                {speakerName}
+                <svg
+                  className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                  <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-20 min-w-[120px]">
+                    {availableSpeakers.map((speaker) => (
+                      <button
+                        key={speaker.id}
+                        onClick={() => {
+                          onSpeakerChange(speaker.id);
+                          setIsDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 first:rounded-t-md last:rounded-b-md ${
+                          speaker.id === speakerId ? 'bg-gray-100 font-medium' : ''
+                        }`}
+                      >
+                        <div
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: speaker.color }}
+                        />
+                        {speaker.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <span className="text-sm font-medium text-gray-900">{speakerName}</span>
+          )}
         </div>
         
         {showVoiceSelector && (
