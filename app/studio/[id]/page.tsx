@@ -312,8 +312,8 @@ export default function StudioPage() {
           fetchVoices(speakersArray);
         }
         
-        // Build timeline tracks
-        const videoDuration = duration || 30;
+        // Build timeline tracks - use actual duration or a short default
+        const videoDuration = duration || 15;
         const timelineTracks: TimelineTrack[] = [
           {
             id: 'original',
@@ -569,8 +569,8 @@ export default function StudioPage() {
         fetchVoices(speakersArray);
       }
 
-      // Build timeline tracks
-      const videoDuration = duration || 30;
+      // Build timeline tracks - use actual duration or a short default
+      const videoDuration = duration || 15;
       const timelineTracks: TimelineTrack[] = [
         {
           id: 'original',
@@ -937,7 +937,7 @@ export default function StudioPage() {
       <div className="flex-shrink-0 min-h-[200px] max-h-[300px] overflow-y-auto border-t border-gray-200 bg-gray-50">
         <Timeline
           tracks={tracks}
-          duration={duration || 30}
+          duration={duration || 15}
           currentTime={currentTime}
           onSeek={handleSeek}
           onTrackMuteToggle={handleTrackMuteToggle}
