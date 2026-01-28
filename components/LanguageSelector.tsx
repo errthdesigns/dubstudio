@@ -5,8 +5,10 @@ import { useState } from 'react';
 const LANGUAGES = [
   { code: 'en', name: 'English', flag: '🇬🇧' },
   { code: 'fr', name: 'French', flag: '🇫🇷' },
+  { code: 'de', name: 'German', flag: '🇩🇪' },
   { code: 'es', name: 'Spanish', flag: '🇪🇸' },
   { code: 'it', name: 'Italian', flag: '🇮🇹' },
+  { code: 'hu', name: 'Hungarian', flag: '🇭🇺' },
   { code: 'pl', name: 'Polish', flag: '🇵🇱' },
 ];
 

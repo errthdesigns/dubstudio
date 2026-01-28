@@ -49,8 +49,10 @@ type ProjectStatus = 'processing' | 'ready' | 'error';
 const LANGUAGE_NAMES: Record<string, string> = {
   en: 'English',
   fr: 'French',
+  de: 'German',
   es: 'Spanish',
   it: 'Italian',
+  hu: 'Hungarian',
   pl: 'Polish',
 };
 
