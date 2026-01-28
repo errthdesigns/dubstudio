@@ -23,7 +23,7 @@ interface TimelineProps {
   currentTime: number;
   onSeek: (time: number) => void;
   onTrackMuteToggle?: (trackId: string) => void;
-  selectedLanguage: string;
+  selectedLanguage?: string; // Kept for backwards compatibility but no longer displayed
 }
 
 export default function Timeline({
@@ -81,16 +81,7 @@ export default function Timeline({
   return (
     <div className="bg-white border-t border-gray-200">
       {/* Timeline Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <button className="px-3 py-1 text-xs rounded bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors">
-            Original
-          </button>
-          <button className="px-3 py-1 text-xs rounded bg-emerald-500 text-white">
-            {selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1)}
-          </button>
-        </div>
-        
+      <div className="flex items-center justify-end px-4 py-2 border-b border-gray-200">
         <div className="flex items-center gap-4">
           <span className="text-xs text-gray-500">Zoom</span>
           <input

@@ -81,6 +81,7 @@ export default function StudioPage() {
   const [activeLanguage, setActiveLanguage] = useState<'original' | 'dubbed'>('dubbed');
   const [isSaving, setIsSaving] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [voicesChanged, setVoicesChanged] = useState(false);
 
   // Load video URL from session storage
   useEffect(() => {
@@ -588,6 +589,25 @@ export default function StudioPage() {
     }
   };
 
+  // Update track durations when actual video duration is known
+  useEffect(() => {
+    if (duration > 0 && tracks.length > 0) {
+      setTracks(prev => prev.map(track => {
+        // Only update original and background tracks that span the full video
+        if (track.id === 'original' || track.id === 'background') {
+          return {
+            ...track,
+            segments: track.segments.map(seg => ({
+              ...seg,
+              endTime: duration,
+            })),
+          };
+        }
+        return track;
+      }));
+    }
+  }, [duration]);
+
   const handleTimeUpdate = useCallback((time: number) => {
     setCurrentTime(time);
   }, []);
@@ -634,8 +654,8 @@ export default function StudioPage() {
         return sv;
       })
     );
-    // Note: In a full implementation, this would trigger re-generation of the dubbed audio
-    // with the new voice selection
+    // Mark that voices have changed and regeneration is needed
+    setVoicesChanged(true);
   };
 
   const handleExportVideo = async () => {
@@ -852,12 +872,18 @@ export default function StudioPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleExportAudio}
-            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            Generate Stale Audio
-          </button>
+          {voicesChanged && (
+            <button
+              onClick={() => {
+                // In a full implementation, this would regenerate the dubbed audio
+                console.log('Regenerating audio with new voice selections...');
+                setVoicesChanged(false);
+              }}
+              className="px-4 py-2 text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors"
+            >
+              Regenerate Audio
+            </button>
+          )}
           <div className="relative">
             <button 
               onClick={() => setShowExportMenu(!showExportMenu)}
