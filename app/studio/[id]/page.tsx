@@ -684,6 +684,8 @@ export default function StudioPage() {
       return updatedTracks;
     });
     
+    // Mark that regeneration is needed when speaker changes
+    setNeedsRegeneration(true);
     setIsSaving(true);
     setTimeout(() => setIsSaving(false), 1000);
   };

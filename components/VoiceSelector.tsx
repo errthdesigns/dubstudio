@@ -64,10 +64,13 @@ export default function VoiceSelector({
         .then(data => {
           console.log('Fetched voices:', data.voices?.length);
           const fetchedVoices = data.voices || [];
-          // Filter out Schwarzkopf voices from fetched to avoid duplicates
+          // Filter out Schwarzkopf voices and Henkel voices from fetched
           const schwarzkopfIds = SCHWARZKOPF_VOICES.map(v => v.voice_id);
-          const otherVoices = fetchedVoices.filter((v: Voice) => !schwarzkopfIds.includes(v.voice_id));
-          // Combine: Schwarzkopf first, then others
+          const otherVoices = fetchedVoices.filter((v: Voice) => 
+            !schwarzkopfIds.includes(v.voice_id) && 
+            !v.name?.toLowerCase().includes('henkel')
+          );
+          // Combine: Schwarzkopf first, then others (excluding Henkel)
           setVoices([...SCHWARZKOPF_VOICES, ...otherVoices]);
         })
         .catch(err => {
