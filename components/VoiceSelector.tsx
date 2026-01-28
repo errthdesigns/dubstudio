@@ -19,6 +19,28 @@ interface VoiceSelectorProps {
   onVoiceSelect?: (voiceId: string) => void;
 }
 
+// Schwarzkopf voices with correct IDs
+const SCHWARZKOPF_VOICES: Voice[] = [
+  {
+    voice_id: 'JEGuEzxdVSJfcKVC9VhI',
+    name: 'Schwarzkopf_French_Female_001',
+    category: 'generated',
+    isHenkelVoice: true,
+  },
+  {
+    voice_id: 'ezC8NPawAxEHu3ty798X',
+    name: 'Schwarzkopf_German_Female_001',
+    category: 'generated',
+    isHenkelVoice: true,
+  },
+  {
+    voice_id: 'LHQay3a5QezKwLIVSfKz',
+    name: 'Schwarzkopf_Spanish_Female_001',
+    category: 'generated',
+    isHenkelVoice: true,
+  },
+];
+
 export default function VoiceSelector({
   speakerId,
   speakerName,
@@ -29,19 +51,24 @@ export default function VoiceSelector({
   const [isOpen, setIsOpen] = useState(false);
   const [playingPreview, setPlayingPreview] = useState<string | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-  const [voices, setVoices] = useState<Voice[]>(similarVoices);
+  const [voices, setVoices] = useState<Voice[]>([...SCHWARZKOPF_VOICES, ...similarVoices]);
   const [loading, setLoading] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<Voice | undefined>(currentVoice);
 
   // Fetch voices when dropdown opens
   useEffect(() => {
-    if (isOpen && voices.length === 0) {
+    if (isOpen && voices.length <= SCHWARZKOPF_VOICES.length) {
       setLoading(true);
       fetch('/api/voices')
         .then(res => res.json())
         .then(data => {
           console.log('Fetched voices:', data.voices?.length);
-          setVoices(data.voices || []);
+          const fetchedVoices = data.voices || [];
+          // Filter out Schwarzkopf voices from fetched to avoid duplicates
+          const schwarzkopfIds = SCHWARZKOPF_VOICES.map(v => v.voice_id);
+          const otherVoices = fetchedVoices.filter((v: Voice) => !schwarzkopfIds.includes(v.voice_id));
+          // Combine: Schwarzkopf first, then others
+          setVoices([...SCHWARZKOPF_VOICES, ...otherVoices]);
         })
         .catch(err => {
           console.error('Failed to fetch voices:', err);
@@ -122,7 +149,7 @@ export default function VoiceSelector({
                 </div>
               ) : voices.length > 0 ? (
                 <>
-                  {/* Henkel Voices Section */}
+                  {/* Schwarzkopf Voices Section */}
                   {voices.some(v => v.isHenkelVoice) && (
                     <>
                       <div className="px-4 py-2 bg-emerald-50 border-b border-emerald-100">
@@ -130,7 +157,7 @@ export default function VoiceSelector({
                           <svg className="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                           </svg>
-                          <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Henkel Voices</span>
+                          <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Schwarzkopf Voices</span>
                         </div>
                       </div>
                       {voices.filter(v => v.isHenkelVoice).map((voice) => (
@@ -149,7 +176,7 @@ export default function VoiceSelector({
                             <div className="flex items-center gap-2">
                               <p className="text-sm text-gray-900 font-medium">{voice.name}</p>
                               <span className="px-1.5 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded font-medium">
-                                HENKEL
+                                SCHWARZKOPF
                               </span>
                               {selectedVoice?.voice_id === voice.voice_id && (
                                 <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">

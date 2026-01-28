@@ -68,21 +68,25 @@ export default function TranscriptionPanel({
     speakerColorMap.set(speaker.id, SPEAKER_COLORS[index % SPEAKER_COLORS.length]);
   });
 
-  // Create available speakers list with colors for the dropdown
-  const availableSpeakers = speakers.map((speaker, index) => ({
-    id: speaker.id,
-    name: speaker.name,
-    color: SPEAKER_COLORS[index % SPEAKER_COLORS.length],
-  }));
+  // Always provide 3 speakers for the dropdown (Speaker 1, 2, 3)
+  const availableSpeakers = [
+    { id: 'speaker_1', name: 'Speaker 1', color: SPEAKER_COLORS[0] },
+    { id: 'speaker_2', name: 'Speaker 2', color: SPEAKER_COLORS[1] },
+    { id: 'speaker_3', name: 'Speaker 3', color: SPEAKER_COLORS[2] },
+  ];
 
   // Get speaker name by ID
   const getSpeakerName = (speakerId: string): string => {
+    const availableSpeaker = availableSpeakers.find(s => s.id === speakerId);
+    if (availableSpeaker) return availableSpeaker.name;
     const speaker = speakers.find(s => s.id === speakerId);
-    return speaker?.name || 'Speaker';
+    return speaker?.name || 'Speaker 1';
   };
 
   // Get speaker color by ID
   const getSpeakerColor = (speakerId: string): string => {
+    const availableSpeaker = availableSpeakers.find(s => s.id === speakerId);
+    if (availableSpeaker) return availableSpeaker.color;
     return speakerColorMap.get(speakerId) || SPEAKER_COLORS[0];
   };
 
@@ -100,30 +104,7 @@ export default function TranscriptionPanel({
       <div className="flex-shrink-0 px-4 py-3 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-900">Transcription</span>
-          <div className="flex items-center gap-3">
-            {needsRegeneration && onRegenerateAudio && (
-              <button
-                onClick={onRegenerateAudio}
-                disabled={isRegenerating}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-400 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                {isRegenerating ? (
-                  <>
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Regenerating...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Regenerate Audio
-                  </>
-                )}
-              </button>
-            )}
-            <span className="text-xs text-gray-500">{segments.length} segments</span>
-          </div>
+          <span className="text-xs text-gray-500">{segments.length} segments</span>
         </div>
       </div>
 
@@ -150,6 +131,9 @@ export default function TranscriptionPanel({
               similarVoices={voiceData?.similarVoices}
               onVoiceSelect={onVoiceSelect ? (voiceId) => onVoiceSelect(segment.speakerId, voiceId) : undefined}
               showVoiceSelector={!!speakerVoices && speakerVoices.length > 0}
+              needsRegeneration={needsRegeneration}
+              isRegenerating={isRegenerating}
+              onRegenerateAudio={onRegenerateAudio}
             />
           );
         })}
