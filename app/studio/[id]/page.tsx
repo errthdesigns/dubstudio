@@ -153,6 +153,35 @@ export default function StudioPage() {
     return () => clearInterval(pollInterval);
   }, [dubbingId]);
 
+  // Update track durations when duration changes
+  useEffect(() => {
+    if (duration > 0) {
+      setTracks(prev => {
+        // Check if any track needs updating
+        const needsUpdate = prev.some(track => 
+          (track.type === 'original' || track.type === 'background') &&
+          track.segments.some(seg => seg.endTime !== duration)
+        );
+        
+        if (!needsUpdate) return prev;
+        
+        return prev.map(track => {
+          if (track.type === 'original' || track.type === 'background') {
+            return {
+              ...track,
+              segments: track.segments.map(seg => ({
+                ...seg,
+                startTime: 0,
+                endTime: duration,
+              })),
+            };
+          }
+          return track;
+        });
+      });
+    }
+  }, [duration]);
+
   const fetchDubbedAudio = async () => {
     try {
       // Get the current target language (might have been updated from ElevenLabs response)
@@ -618,18 +647,22 @@ export default function StudioPage() {
   const handleDurationChange = useCallback((dur: number) => {
     setDuration(dur);
     // Update track durations when actual video duration is known
-    setTracks(prev => prev.map(track => {
-      if (track.type === 'original' || track.type === 'background') {
-        return {
-          ...track,
-          segments: track.segments.map(seg => ({
-            ...seg,
-            endTime: dur,
-          })),
-        };
-      }
-      return track;
-    }));
+    setTracks(prev => {
+      if (prev.length === 0) return prev;
+      return prev.map(track => {
+        if (track.type === 'original' || track.type === 'background') {
+          return {
+            ...track,
+            segments: track.segments.map(seg => ({
+              ...seg,
+              startTime: 0,
+              endTime: dur,
+            })),
+          };
+        }
+        return track;
+      });
+    });
   }, []);
 
   const handleSeek = useCallback((time: number) => {
